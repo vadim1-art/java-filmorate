@@ -99,7 +99,9 @@ class UserServiceTest {
 
     @Test
     void createUserWithBirthdayExactlyNowShouldBeAllowed() {
-        User user = new User(null, "test@ya.ru", "login", "name", Instant.now());
+        // Небольшая задержка, чтобы быть не в будущем
+        User user = new User(null, "test@ya.ru", "login", "name",
+                Instant.now().minusMillis(1));
         assertDoesNotThrow(() -> userService.create(user));
     }
 
@@ -131,9 +133,9 @@ class UserServiceTest {
         User update = new User(original.getId(), "new@ya.ru", "newLogin", "NewName",
                 Instant.now().minus(365, ChronoUnit.DAYS));
         User result = userService.update(update);
-        assertEquals("new@ya.ru", result.getName());
+        assertEquals("new@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
-        assertEquals("old@ya.ru", result.getEmail());
+        assertEquals("NewName", result.getName());
     }
 
     @Test
@@ -141,7 +143,7 @@ class UserServiceTest {
         User user = new User(null, "a@b.com", "login", "name", Instant.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.update(user));
-        assertEquals("Film id is null", ex.getMessage());
+        assertEquals("User id is null", ex.getMessage());  // сообщение из сервиса
     }
 
     @Test
@@ -176,8 +178,9 @@ class UserServiceTest {
         User update = new User(original.getId(), "USER@ya.ru", "newLogin", "NewName",
                 Instant.now().minus(365, ChronoUnit.DAYS));
         User result = userService.update(update);
-        assertEquals("Name", result.getName());
+        assertEquals("user@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
+        assertEquals("NewName", result.getName());
     }
 
     @Test

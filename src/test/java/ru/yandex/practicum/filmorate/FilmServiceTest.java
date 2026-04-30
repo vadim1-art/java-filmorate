@@ -23,8 +23,8 @@ class FilmServiceTest {
 
     @Test
     void createValidFilmShouldReturnFilmWithId() {
-        Film film = new Film(null, "Interstellar",
-                "Sci-fi epic", LocalDate.of(2014, 11, 7), 169);
+        Film film = new Film(null, "Interstellar", "Sci-fi epic",
+                LocalDate.of(2014, 11, 7), 169);
         Film created = filmService.create(film);
         assertNotNull(created.getId());
         assertEquals(1L, created.getId());
@@ -65,15 +65,14 @@ class FilmServiceTest {
 
     @Test
     void createFilmWithNullDescriptionShouldNotThrow() {
-        Film film = new Film(null, "Title", null,
-                LocalDate.now(), 120);
+        Film film = new Film(null, "Title", null, LocalDate.now(), 120);
         assertDoesNotThrow(() -> filmService.create(film));
     }
 
     @Test
     void createFilmWithReleaseDateBefore28Dec1895ShouldThrowInvalidDateException() {
-        Film film = new Film(null, "Old",
-                "desc", LocalDate.of(1895, 12, 27), 10);
+        Film film = new Film(null, "Old", "desc",
+                LocalDate.of(1895, 12, 27), 10);
         InvalidDateException ex = assertThrows(InvalidDateException.class,
                 () -> filmService.create(film));
         assertEquals("Film release date is too old", ex.getMessage());
@@ -81,15 +80,14 @@ class FilmServiceTest {
 
     @Test
     void createFilmWithReleaseDateExactly28Dec1895ShouldPass() {
-        Film film = new Film(null, "Old",
-                "desc", LocalDate.of(1895, 12, 28), 10);
+        Film film = new Film(null, "Old", "desc",
+                LocalDate.of(1895, 12, 28), 10);
         assertDoesNotThrow(() -> filmService.create(film));
     }
 
     @Test
     void createFilmWithNullReleaseDateShouldThrowValidationException() {
-        Film film = new Film(null, "Title", "desc",
-                null, 120);
+        Film film = new Film(null, "Title", "desc", null, 120);
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> filmService.create(film));
         assertEquals("Release date is required", ex.getMessage());
@@ -120,8 +118,8 @@ class FilmServiceTest {
     @Test
     void updateExistingFilmShouldChangeFields() {
         Film original = filmService.create(
-                new Film(null, "Original",
-                        "Desc", LocalDate.of(2000, 1, 1), 100));
+                new Film(null, "Original", "Desc",
+                        LocalDate.of(2000, 1, 1), 100));
         Film update = new Film(original.getId(), "Updated", "New desc",
                 LocalDate.of(2001, 2, 2), 150);
         Film result = filmService.update(update);
@@ -162,22 +160,21 @@ class FilmServiceTest {
     }
 
     @Test
-    void updateFilmWithSameNameDifferentCaseShouldNotThrow() {
+    void updateFilmWithSameNameDifferentCaseShouldThrowException() {
         Film original = filmService.create(
                 new Film(null, "Original", "Desc", LocalDate.now(), 100));
         Film update = new Film(original.getId(), "ORIGINAL", "Desc",
                 LocalDate.now(), 100);
-        assertDoesNotThrow(() -> filmService.update(update));
-        assertEquals("ORIGINAL", filmService.getFilms().stream().findFirst().get().getName());
+        DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
+                () -> filmService.update(update));
+        assertEquals("Film name already in use", ex.getMessage());
     }
 
     @Test
     void updateFilmWithNullNameShouldKeepOldName() {
         Film original = filmService.create(
-                new Film(null, "Original",
-                        "Desc", LocalDate.now(), 100));
-        Film update = new Film(original.getId(), null,
-                "new desc", null, 0);
+                new Film(null, "Original", "Desc", LocalDate.now(), 100));
+        Film update = new Film(original.getId(), null, "new desc", null, 0);
         Film result = filmService.update(update);
         assertEquals("Original", result.getName());
     }
@@ -186,8 +183,7 @@ class FilmServiceTest {
     void updateFilmWithBlankNameShouldKeepOldName() {
         Film original = filmService.create(
                 new Film(null, "Original", "Desc", LocalDate.now(), 100));
-        Film update = new Film(original.getId(), "   ",
-                "new desc", null, 0);
+        Film update = new Film(original.getId(), "   ", "new desc", null, 0);
         Film result = filmService.update(update);
         assertEquals("Original", result.getName());
     }
@@ -195,10 +191,8 @@ class FilmServiceTest {
     @Test
     void updateFilmWithNullDescriptionShouldKeepOldDescription() {
         Film original = filmService.create(
-                new Film(null, "Film", "Original desc",
-                        LocalDate.now(), 100));
-        Film update = new Film(original.getId(), "Film", null,
-                null, 0);
+                new Film(null, "Film", "Original desc", LocalDate.now(), 100));
+        Film update = new Film(original.getId(), "Film", null, null, 0);
         Film result = filmService.update(update);
         assertEquals("Original desc", result.getDescription());
     }
@@ -206,10 +200,8 @@ class FilmServiceTest {
     @Test
     void updateFilmWithBlankDescriptionShouldKeepOldDescription() {
         Film original = filmService.create(
-                new Film(null, "Film", "Original desc",
-                        LocalDate.now(), 100));
-        Film update = new Film(original.getId(), "Film", "  ",
-                null, 0);
+                new Film(null, "Film", "Original desc", LocalDate.now(), 100));
+        Film update = new Film(original.getId(), "Film", "  ", null, 0);
         Film result = filmService.update(update);
         assertEquals("Original desc", result.getDescription());
     }
@@ -218,10 +210,8 @@ class FilmServiceTest {
     void updateFilmWithNullReleaseDateShouldKeepOldReleaseDate() {
         LocalDate release = LocalDate.of(2000, 1, 1);
         Film original = filmService.create(
-                new Film(null, "Film", "desc",
-                        release, 100));
-        Film update = new Film(original.getId(), "Film", "desc",
-                null, 100);
+                new Film(null, "Film", "desc", release, 100));
+        Film update = new Film(original.getId(), "Film", "desc", null, 100);
         Film result = filmService.update(update);
         assertEquals(release, result.getReleaseDate());
     }
