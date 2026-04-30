@@ -30,7 +30,7 @@ public class FilmService {
         if (films.containsKey(newFilm.getId())) {
             Film oldFilm = films.get(newFilm.getId());
             if (newFilm.getName() != null && !newFilm.getName().isBlank()) {
-                if (!newFilm.getName().equalsIgnoreCase(oldFilm.getName())) {
+                if (!newFilm.getName().equals(oldFilm.getName())) {
                     boolean nameExists = films.values().stream()
                             .anyMatch(f -> f.getName().equalsIgnoreCase(newFilm.getName()));
                     if (nameExists) {
@@ -58,13 +58,12 @@ public class FilmService {
             log.warn("Попытка создать фильм с пустым названием");
             throw new ValidationException("Film name cannot be empty");
         }
-        if (films.containsValue(film)) {
-            log.warn("Попытка создать дубликат фильма: {}", film);
-            throw new DuplicatedDataException("Film already exists");
-        }
-        if (film.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
+        if (film.getDescription() != null && film.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
             log.warn("Слишком длинное описание фильма (длина: {} символов)", film.getDescription().length());
             throw new ValidationException("Film description is too long");
+        }
+        if (film.getReleaseDate() == null) {
+            throw new ValidationException("Release date is required");
         }
         if (film.getReleaseDate().isBefore(MIN_DATE)) {
             log.warn("Дата релиза фильма {} ранее {}", film.getReleaseDate(), MIN_DATE);
@@ -86,7 +85,6 @@ public class FilmService {
                 .mapToLong(id -> id)
                 .max()
                 .orElse(0);
-        long newId = ++currentMaxId;
-        return newId;
+        return ++currentMaxId;
     }
 }

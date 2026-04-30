@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +17,6 @@ import java.util.Map;
 @Service
 public class UserService {
     private final Map<Long, User> users = new HashMap<>();
-    private LocalDate today = LocalDate.now();
 
     public Collection<User> getUsers() {
         return users.values();
@@ -26,16 +24,17 @@ public class UserService {
 
     public User update(User newUser) {
         if (newUser.getId() == null) {
-            throw new ValidationException("Film id is null");
+            throw new ValidationException("User id is null");
         }
         if (users.containsKey(newUser.getId())) {
             User oldUser = users.get(newUser.getId());
-            if (newUser.getEmail() != null &&
-                    !newUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
-                if (users.containsValue(newUser)) {
+            if (newUser.getEmail() != null && !newUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
+                boolean emailExists = users.values().stream()
+                        .anyMatch(u -> u.getEmail().equalsIgnoreCase(newUser.getEmail()));
+                if (emailExists) {
                     throw new DuplicatedDataException("Email already in use");
                 }
-                oldUser.setName(newUser.getEmail());
+                oldUser.setEmail(newUser.getEmail());
             }
             if (newUser.getLogin() != null && !newUser.getLogin().isBlank()) {
                 oldUser.setLogin(newUser.getLogin());
@@ -49,27 +48,28 @@ public class UserService {
     }
 
     public User create(User user) {
-        if (users.containsValue(user)) {
-            log.warn("Попытка создать дубликат пользователя: {}", user);
-            throw new DuplicatedDataException("User already exists");
-        }
         if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Попытка создать пользователя без email");
             throw new ValidationException("Email is required");
         }
         if (!user.getEmail().contains("@")) {
             throw new ValidationException("Email must contain '@'");
         }
         if (user.getLogin() == null || user.getLogin().isBlank()) {
-            log.warn("Попытка создать пользователя с пустым логином");
             throw new ValidationException("Login is required");
+        }
+        if (user.getBirthday() == null) {
+            throw new ValidationException("Birthday is required");
+        }
+        if (users.containsValue(user)) {
+            log.warn("Попытка создать дубликат пользователя: {}", user);
+            throw new DuplicatedDataException("User already exists");
+        }
+        if (user.getBirthday().isAfter(Instant.now())) {
+            log.warn("Дата рождения пользователя в будущем: {}", user.getBirthday());
+            throw new InvalidDateException("Birthday is after current time");
         }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
-        }
-        if (user.getBirthday().isAfter(Instant.from(today))) {
-            log.warn("Дата рождения пользователя в будущем: {}", user.getBirthday());
-            throw new InvalidDateException("Birthday is after today");
         }
 
         user.setId(getNextId());
@@ -83,7 +83,6 @@ public class UserService {
                 .mapToLong(id -> id)
                 .max()
                 .orElse(0);
-        long newId = ++currentMaxId;
-        return newId;
+        return ++currentMaxId;
     }
 }
