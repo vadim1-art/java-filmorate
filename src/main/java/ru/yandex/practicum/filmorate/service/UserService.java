@@ -42,6 +42,12 @@ public class UserService {
             if (newUser.getName() != null && !newUser.getName().isBlank()) {
                 oldUser.setName(newUser.getName());
             }
+            if (newUser.getBirthday() != null) {
+                if (newUser.getBirthday().isAfter(LocalDate.now())) {
+                    throw new InvalidDateException("Birthday is after current date");
+                }
+                oldUser.setBirthday(newUser.getBirthday());
+            }
             return oldUser;
         }
         throw new NotFoundException("User with id " + newUser.getId() + " not found");
