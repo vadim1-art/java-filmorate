@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,9 +64,9 @@ public class UserService {
             log.warn("Попытка создать дубликат пользователя: {}", user);
             throw new DuplicatedDataException("User already exists");
         }
-        if (user.getBirthday().isAfter(Instant.now())) {
+        if (user.getBirthday().isAfter(LocalDate.now())) {
             log.warn("Дата рождения пользователя в будущем: {}", user.getBirthday());
-            throw new InvalidDateException("Birthday is after current time");
+            throw new InvalidDateException("Birthday is after current date");
         }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());

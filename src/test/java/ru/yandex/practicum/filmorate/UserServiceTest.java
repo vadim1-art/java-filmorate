@@ -9,8 +9,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +25,7 @@ class UserServiceTest {
     @Test
     void createValidUserShouldReturnUserWithId() {
         User user = new User(null, "test@ya.ru", "login", "name",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User created = userService.create(user);
         assertNotNull(created.getId());
         assertEquals("test@ya.ru", created.getEmail());
@@ -34,7 +33,7 @@ class UserServiceTest {
 
     @Test
     void createUserWithNullEmailShouldThrowValidationException() {
-        User user = new User(null, null, "login", "name", Instant.now());
+        User user = new User(null, null, "login", "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.create(user));
         assertEquals("Email is required", ex.getMessage());
@@ -42,7 +41,7 @@ class UserServiceTest {
 
     @Test
     void createUserWithBlankEmailShouldThrowValidationException() {
-        User user = new User(null, "   ", "login", "name", Instant.now());
+        User user = new User(null, "   ", "login", "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.create(user));
         assertEquals("Email is required", ex.getMessage());
@@ -50,7 +49,7 @@ class UserServiceTest {
 
     @Test
     void createUserWithEmailWithoutAtShouldThrowValidationException() {
-        User user = new User(null, "email", "login", "name", Instant.now());
+        User user = new User(null, "email", "login", "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.create(user));
         assertEquals("Email must contain '@'", ex.getMessage());
@@ -58,7 +57,7 @@ class UserServiceTest {
 
     @Test
     void createUserWithNullLoginShouldThrowValidationException() {
-        User user = new User(null, "test@mail.ru", null, "name", Instant.now());
+        User user = new User(null, "test@mail.ru", null, "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.create(user));
         assertEquals("Login is required", ex.getMessage());
@@ -66,7 +65,7 @@ class UserServiceTest {
 
     @Test
     void createUserWithBlankLoginShouldThrowValidationException() {
-        User user = new User(null, "test@mail.ru", "   ", "name", Instant.now());
+        User user = new User(null, "test@mail.ru", "   ", "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.create(user));
         assertEquals("Login is required", ex.getMessage());
@@ -75,7 +74,7 @@ class UserServiceTest {
     @Test
     void createUserWithEmptyNameShouldUseLoginAsName() {
         User user = new User(null, "test@mail.ru", "MyLogin", "",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User created = userService.create(user);
         assertEquals("MyLogin", created.getName());
     }
@@ -83,7 +82,7 @@ class UserServiceTest {
     @Test
     void createUserWithNullNameShouldUseLoginAsName() {
         User user = new User(null, "test@mail.ru", "MyLogin", null,
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User created = userService.create(user);
         assertEquals("MyLogin", created.getName());
     }
@@ -91,17 +90,15 @@ class UserServiceTest {
     @Test
     void createUserWithBirthdayInFutureShouldThrowInvalidDateException() {
         User user = new User(null, "test@ya.ru", "login", "name",
-                Instant.now().plus(1, ChronoUnit.DAYS));
+                LocalDate.now().plusDays(1));
         InvalidDateException ex = assertThrows(InvalidDateException.class,
                 () -> userService.create(user));
-        assertEquals("Birthday is after current time", ex.getMessage());
+        assertEquals("Birthday is after current date", ex.getMessage());
     }
 
     @Test
     void createUserWithBirthdayExactlyNowShouldBeAllowed() {
-        // Небольшая задержка, чтобы быть не в будущем
-        User user = new User(null, "test@ya.ru", "login", "name",
-                Instant.now().minusMillis(1));
+        User user = new User(null, "test@ya.ru", "login", "name", LocalDate.now());
         assertDoesNotThrow(() -> userService.create(user));
     }
 
@@ -116,10 +113,10 @@ class UserServiceTest {
     @Test
     void createDuplicateUserByEmailAndLoginShouldThrowDuplicatedDataException() {
         User first = new User(null, "dup@ya.ru", "dup", "name",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         userService.create(first);
         User second = new User(null, "dup@ya.ru", "dup", "other",
-                Instant.now().minus(100, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(100));
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.create(second));
         assertEquals("User already exists", ex.getMessage());
@@ -129,9 +126,9 @@ class UserServiceTest {
     void updateExistingUserShouldChangeFields() {
         User original = userService.create(
                 new User(null, "old@ya.ru", "oldLogin", "OldName",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), "new@ya.ru", "newLogin", "NewName",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("new@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
@@ -140,15 +137,15 @@ class UserServiceTest {
 
     @Test
     void updateUserWithNullIdShouldThrowValidationException() {
-        User user = new User(null, "a@b.com", "login", "name", Instant.now());
+        User user = new User(null, "a@b.com", "login", "name", LocalDate.now());
         ValidationException ex = assertThrows(ValidationException.class,
                 () -> userService.update(user));
-        assertEquals("User id is null", ex.getMessage());  // сообщение из сервиса
+        assertEquals("User id is null", ex.getMessage());
     }
 
     @Test
     void updateNonExistentUserShouldThrowNotFoundException() {
-        User user = new User(999L, "a@b.com", "login", "name", Instant.now());
+        User user = new User(999L, "a@b.com", "login", "name", LocalDate.now());
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> userService.update(user));
         assertEquals("User with id 999 not found", ex.getMessage());
@@ -158,13 +155,12 @@ class UserServiceTest {
     void updateUserWithDuplicateEmailShouldThrowException() {
         User first = userService.create(
                 new User(null, "first@ya.ru", "firstLogin", "First",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User second = userService.create(
                 new User(null, "second@ya.ru", "secondLogin", "Second",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
-
+                        LocalDate.now().minusDays(365)));
         User update = new User(second.getId(), "first@ya.ru", "firstLogin", "irrelevant",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.update(update));
         assertEquals("Email already in use", ex.getMessage());
@@ -174,9 +170,9 @@ class UserServiceTest {
     void updateUserWithSameEmailDifferentCaseShouldNotTriggerEmailChange() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "Name",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), "USER@ya.ru", "newLogin", "NewName",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("user@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
@@ -187,9 +183,9 @@ class UserServiceTest {
     void updateUserWithNullEmailShouldKeepOldEmail() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "Name",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), null, "newLogin", "NewName",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("user@ya.ru", result.getEmail());
         assertEquals("NewName", result.getName());
@@ -199,9 +195,9 @@ class UserServiceTest {
     void updateUserWithBlankLoginShouldKeepOldLogin() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "oldLogin", "Name",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), null, "   ", "NewName",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("oldLogin", result.getLogin());
     }
@@ -210,9 +206,9 @@ class UserServiceTest {
     void updateUserWithNullNameShouldKeepOldName() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "OldName",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), null, null, null,
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("OldName", result.getName());
     }
@@ -221,9 +217,9 @@ class UserServiceTest {
     void updateUserWithBlankNameShouldKeepOldName() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "OldName",
-                        Instant.now().minus(365, ChronoUnit.DAYS)));
+                        LocalDate.now().minusDays(365)));
         User update = new User(original.getId(), null, null, "   ",
-                Instant.now().minus(365, ChronoUnit.DAYS));
+                LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("OldName", result.getName());
     }
