@@ -2,13 +2,15 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
 
-@RequiredArgsConstructor    //Генерирует конструктор только для обязательных полей класса.
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -19,14 +21,14 @@ public class UserController {
         return userService.getUsers();
     }
 
-    @PutMapping
-    public User updateUser(@RequestBody User newUser) {
-        return userService.update(newUser);
-    }
-
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public User createUser(@RequestBody User user) {
+    public User create(@Validated(User.Create.class) @RequestBody User user) {
         return userService.create(user);
+    }
+
+    @PutMapping
+    public User update(@Validated(User.Update.class) @RequestBody User user) {
+        return userService.update(user);
     }
 }
