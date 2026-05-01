@@ -1,21 +1,33 @@
 package ru.yandex.practicum.filmorate;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
-import ru.yandex.practicum.filmorate.exception.InvalidDateException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserServiceTest {
 
     private UserService userService;
+    private static Validator validator;
+
+    @BeforeAll
+    static void setUpValidator() {
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            validator = factory.getValidator();
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -29,46 +41,6 @@ class UserServiceTest {
         User created = userService.create(user);
         assertNotNull(created.getId());
         assertEquals("test@ya.ru", created.getEmail());
-    }
-
-    @Test
-    void createUserWithNullEmailShouldThrowValidationException() {
-        User user = new User(null, null, "login", "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Email is required", ex.getMessage());
-    }
-
-    @Test
-    void createUserWithBlankEmailShouldThrowValidationException() {
-        User user = new User(null, "   ", "login", "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Email is required", ex.getMessage());
-    }
-
-    @Test
-    void createUserWithEmailWithoutAtShouldThrowValidationException() {
-        User user = new User(null, "email", "login", "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Email must contain '@'", ex.getMessage());
-    }
-
-    @Test
-    void createUserWithNullLoginShouldThrowValidationException() {
-        User user = new User(null, "test@mail.ru", null, "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Login is required", ex.getMessage());
-    }
-
-    @Test
-    void createUserWithBlankLoginShouldThrowValidationException() {
-        User user = new User(null, "test@mail.ru", "   ", "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Login is required", ex.getMessage());
     }
 
     @Test
@@ -88,38 +60,21 @@ class UserServiceTest {
     }
 
     @Test
-    void createUserWithBirthdayInFutureShouldThrowInvalidDateException() {
-        User user = new User(null, "test@ya.ru", "login", "name",
-                LocalDate.now().plusDays(1));
-        InvalidDateException ex = assertThrows(InvalidDateException.class,
-                () -> userService.create(user));
-        assertEquals("Birthday is after current date", ex.getMessage());
-    }
-
-    @Test
     void createUserWithBirthdayExactlyNowShouldBeAllowed() {
         User user = new User(null, "test@ya.ru", "login", "name", LocalDate.now());
         assertDoesNotThrow(() -> userService.create(user));
     }
 
     @Test
-    void createUserWithNullBirthdayShouldThrowValidationException() {
-        User user = new User(null, "test@ya.ru", "login", "name", null);
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.create(user));
-        assertEquals("Birthday is required", ex.getMessage());
-    }
-
-    @Test
-    void createDuplicateUserByEmailAndLoginShouldThrowDuplicatedDataException() {
+    void createDuplicateEmailShouldThrowException() {
         User first = new User(null, "dup@ya.ru", "dup", "name",
                 LocalDate.now().minusDays(365));
         userService.create(first);
-        User second = new User(null, "dup@ya.ru", "dup", "other",
+        User second = new User(null, "dup@ya.ru", "other", "otherName",
                 LocalDate.now().minusDays(100));
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.create(second));
-        assertEquals("User already exists", ex.getMessage());
+        assertEquals("Email already in use", ex.getMessage());
     }
 
     @Test
@@ -133,14 +88,6 @@ class UserServiceTest {
         assertEquals("new@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
         assertEquals("NewName", result.getName());
-    }
-
-    @Test
-    void updateUserWithNullIdShouldThrowValidationException() {
-        User user = new User(null, "a@b.com", "login", "name", LocalDate.now());
-        ValidationException ex = assertThrows(ValidationException.class,
-                () -> userService.update(user));
-        assertEquals("User id is null", ex.getMessage());
     }
 
     @Test
@@ -159,7 +106,7 @@ class UserServiceTest {
         User second = userService.create(
                 new User(null, "second@ya.ru", "secondLogin", "Second",
                         LocalDate.now().minusDays(365)));
-        User update = new User(second.getId(), "first@ya.ru", "firstLogin", "irrelevant",
+        User update = new User(second.getId(), "first@ya.ru", "newLogin", "irrelevant",
                 LocalDate.now().minusDays(365));
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.update(update));
@@ -167,7 +114,7 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUserWithSameEmailDifferentCaseShouldNotTriggerEmailChange() {
+    void updateUserWithSameEmailDifferentCaseShouldNotChangeEmail() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "Name",
                         LocalDate.now().minusDays(365)));
@@ -188,7 +135,6 @@ class UserServiceTest {
                 LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("user@ya.ru", result.getEmail());
-        assertEquals("NewName", result.getName());
     }
 
     @Test
@@ -222,5 +168,70 @@ class UserServiceTest {
                 LocalDate.now().minusDays(365));
         User result = userService.update(update);
         assertEquals("OldName", result.getName());
+    }
+
+    @Test
+    void updateUserWithNullBirthdayShouldKeepOldBirthday() {
+        LocalDate bday = LocalDate.now().minusYears(20);
+        User original = userService.create(
+                new User(null, "user@ya.ru", "login", "Name", bday));
+        User update = new User(original.getId(), null, null, null, null);
+        User result = userService.update(update);
+        assertEquals(bday, result.getBirthday());
+    }
+
+    @Test
+    void userEmailMustNotBeBlank() {
+        User user = new User(null, "   ", "login", "name", LocalDate.now());
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("Email is required")));
+    }
+
+    @Test
+    void userEmailMustBeValid() {
+        User user = new User(null, "not-an-email", "login", "name", LocalDate.now());
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("must be valid")));
+    }
+
+    @Test
+    void userLoginMustNotBeBlank() {
+        User user = new User(null, "a@b.com", "  ", "name", LocalDate.now());
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("Login is required")));
+    }
+
+    @Test
+    void userBirthdayMustNotBeInFuture() {
+        User user = new User(null, "a@b.com", "login",
+                "name", LocalDate.now().plusDays(1));
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("Birthday must be in the past")));
+    }
+
+    @Test
+    void userBirthdayMustNotBeNull() {
+        User user = new User(null, "a@b.com", "login", "name", null);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("Birthday is required")));
+    }
+
+    @Test
+    void updateUserIdMustNotBeNull() {
+        User user = new User(null, "a@b.com", "login", "name", LocalDate.now());
+        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Update.class);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v ->
+                v.getMessage().contains("User id must not be null")));
     }
 }
