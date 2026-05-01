@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class Film {
 
     public interface Create {}
+
     public interface Update {}
 
     @NotNull(groups = Update.class, message = "Film id must not be null")
