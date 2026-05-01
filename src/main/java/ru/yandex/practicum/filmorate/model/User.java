@@ -19,6 +19,7 @@ public class User {
     public interface Create {}
     public interface Update {}
 
+    @NotNull(groups = Update.class, message = "User id must not be null")
     private Long id;
 
     @NotBlank(groups = Create.class, message = "Email is required")
