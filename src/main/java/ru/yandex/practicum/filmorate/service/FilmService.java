@@ -42,7 +42,7 @@ public class FilmService {
         if (newFilm.getReleaseDate() != null) {
             oldFilm.setReleaseDate(newFilm.getReleaseDate());
         }
-        if (newFilm.getDuration() != null && newFilm.getDuration() > 0) { // Без newFilm.getDuration() > 0 тест падает в GitHub
+        if (newFilm.getDuration() != null && newFilm.getDuration() >= 0) {
             oldFilm.setDuration(newFilm.getDuration());
         }
         return oldFilm;
