@@ -1,13 +1,12 @@
 package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
 
@@ -16,10 +15,6 @@ import java.time.LocalDate;
 @Data
 public class User {
 
-    public interface Create {}
-
-    public interface Update {}
-
     @NotNull(groups = Update.class, message = "User id must not be null")
     private Long id;
 
@@ -27,9 +22,19 @@ public class User {
     @Email(groups = {Create.class, Update.class}, message = "Email must be valid")
     private String email;
 
+    @Pattern(
+            regexp = "^[^<>&\"']+$",
+            groups = {Create.class, Update.class},
+            message = "Invalid characters"
+    )
     @NotBlank(groups = Create.class, message = "Login is required")
     private String login;
 
+    @Pattern(
+            regexp = "^[^<>&\"']+$",
+            groups = {Create.class, Update.class},
+            message = "Invalid characters"
+    )
     private String name;
 
     @NotNull(groups = Create.class, message = "Birthday is required")

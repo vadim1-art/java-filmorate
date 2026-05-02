@@ -3,16 +3,14 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
 
 @AllArgsConstructor
 @Data
 public class Film {
-
-    public interface Create {}
-
-    public interface Update {}
 
     @NotNull(groups = Update.class, message = "Film id must not be null")
     private Long id;

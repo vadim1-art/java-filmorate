@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.validation.Create;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -187,7 +188,7 @@ class FilmServiceTest {
     @Test
     void filmNameMustNotBeBlank() {
         Film film = new Film(null, "   ", "desc", LocalDate.now(), 120L);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Film.Create.class);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Film name cannot be empty")));
@@ -197,7 +198,7 @@ class FilmServiceTest {
     void filmDescriptionMustNotExceed200Chars() {
         String desc = "a".repeat(201);
         Film film = new Film(null, "Title", desc, LocalDate.now(), 90L);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Film.Create.class);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("description is too long")));
@@ -207,7 +208,7 @@ class FilmServiceTest {
     void releaseDateMustNotBeBefore28Dec1895() {
         Film film = new Film(null, "Old", "desc",
                 LocalDate.of(1895, 12, 27), 10L);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Film.Create.class);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Release date must not be before")));
@@ -216,7 +217,7 @@ class FilmServiceTest {
     @Test
     void releaseDateMustNotBeNull() {
         Film film = new Film(null, "Title", "desc", null, 120L);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Film.Create.class);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Release date is required")));
@@ -225,7 +226,7 @@ class FilmServiceTest {
     @Test
     void durationMustBePositive() {
         Film film = new Film(null, "Film", "desc", LocalDate.now(), 0L);
-        Set<ConstraintViolation<Film>> violations = validator.validate(film, Film.Create.class);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Duration must be positive")));

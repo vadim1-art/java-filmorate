@@ -11,6 +11,8 @@ import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -183,7 +185,7 @@ class UserServiceTest {
     @Test
     void userEmailMustNotBeBlank() {
         User user = new User(null, "   ", "login", "name", LocalDate.now());
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Email is required")));
@@ -192,7 +194,7 @@ class UserServiceTest {
     @Test
     void userEmailMustBeValid() {
         User user = new User(null, "not-an-email", "login", "name", LocalDate.now());
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("must be valid")));
@@ -201,7 +203,7 @@ class UserServiceTest {
     @Test
     void userLoginMustNotBeBlank() {
         User user = new User(null, "a@b.com", "  ", "name", LocalDate.now());
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Login is required")));
@@ -211,7 +213,7 @@ class UserServiceTest {
     void userBirthdayMustNotBeInFuture() {
         User user = new User(null, "a@b.com", "login",
                 "name", LocalDate.now().plusDays(1));
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Birthday must be in the past")));
@@ -220,7 +222,7 @@ class UserServiceTest {
     @Test
     void userBirthdayMustNotBeNull() {
         User user = new User(null, "a@b.com", "login", "name", null);
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Create.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("Birthday is required")));
@@ -229,7 +231,7 @@ class UserServiceTest {
     @Test
     void updateUserIdMustNotBeNull() {
         User user = new User(null, "a@b.com", "login", "name", LocalDate.now());
-        Set<ConstraintViolation<User>> violations = validator.validate(user, User.Update.class);
+        Set<ConstraintViolation<User>> violations = validator.validate(user, Update.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getMessage().contains("User id must not be null")));

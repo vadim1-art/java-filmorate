@@ -6,6 +6,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.Collection;
 
@@ -23,12 +25,12 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public User create(@Validated(User.Create.class) @RequestBody User user) {
+    public User create(@Validated(Create.class) @RequestBody User user) {
         return userService.create(user);
     }
 
     @PutMapping
-    public User update(@Validated(User.Update.class) @RequestBody User user) {
+    public User update(@Validated(Update.class) @RequestBody User user) {
         return userService.update(user);
     }
 }
