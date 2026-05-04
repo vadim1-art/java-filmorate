@@ -57,7 +57,7 @@ public class UserService {
 
         return commonIds.stream()
                 .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("riend with id " + id + " not found")))
+                        .orElseThrow(() -> new NotFoundException("Friend with id " + id + " not found")))
                 .collect(Collectors.toList());
     }
 
@@ -82,8 +82,8 @@ public class UserService {
         if (newUser.getLogin() != null && !newUser.getLogin().isBlank()) {
             oldUser.setLogin(newUser.getLogin());
         }
-        if (newUser.getName() != null) {
-            oldUser.setName(newUser.getName().isBlank() ? oldUser.getLogin() : newUser.getName());
+        if (newUser.getName() != null && !newUser.getName().isBlank()) {
+            oldUser.setName(newUser.getName());
         }
         if (newUser.getBirthday() != null) {
             oldUser.setBirthday(newUser.getBirthday());

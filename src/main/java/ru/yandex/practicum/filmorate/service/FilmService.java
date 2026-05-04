@@ -26,7 +26,7 @@ public class FilmService {
 
     public void removeLike(Long filmId, Long userId) {
         Film film = filmStorage.findById(filmId)
-                .orElseThrow(() -> new NotFoundException("ilm with id " + filmId + " not found"));
+                .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
         film.getLikesUnderFilm().remove(userId);
     }
 
@@ -48,8 +48,7 @@ public class FilmService {
         if (newFilm.getName() != null && !newFilm.getName().isBlank()
                 && !newFilm.getName().equals(oldFilm.getName())) {
             boolean nameExists = filmStorage.findAll().stream()
-                    .anyMatch(f -> !f.getId().equals(oldFilm.getId())
-                            && f.getName().equalsIgnoreCase(newFilm.getName()));
+                    .anyMatch(f -> f.getName().equalsIgnoreCase(newFilm.getName()));
             if (nameExists) {
                 throw new DuplicatedDataException("Film name already in use");
             }
