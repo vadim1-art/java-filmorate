@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,6 +23,13 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND) // 404
     public Map<String, String> handleNotFound(NotFoundException e) {
         return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // 400
+    public Map<String, String> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        return Map.of("error", message != null ? message : "Validation failed");
     }
 
     @ExceptionHandler(Exception.class)

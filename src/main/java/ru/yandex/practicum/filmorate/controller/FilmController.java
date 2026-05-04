@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.Collection;
 
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/films")
@@ -46,7 +45,7 @@ public class FilmController {
         filmService.removeLike(filmId, userId);
     }
 
-    @GetMapping("/popular?count={count}")
+    @GetMapping("/popular")
     public Collection<Film> topFilms(@RequestParam(defaultValue = "10") int limit) {
         return filmService.topFilms(limit);
     }

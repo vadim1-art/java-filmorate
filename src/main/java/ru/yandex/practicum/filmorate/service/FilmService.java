@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -17,16 +18,21 @@ import java.util.stream.Collectors;
 @Service
 public class FilmService {
     private final FilmStorage filmStorage;
+    private final UserStorage userStorage;   // нужно для проверки существования пользователя
 
     public void addLike(Long filmId, Long userId) {
         Film film = filmStorage.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
-        film.getLikesUnderFilm().add(userId);
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+        film.getLikesUnderFilm().add(userId);   // теперь userId!
     }
 
     public void removeLike(Long filmId, Long userId) {
         Film film = filmStorage.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
         film.getLikesUnderFilm().remove(userId);
     }
 

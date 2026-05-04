@@ -11,8 +11,7 @@ import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.Collection;
 
-
-@RequiredArgsConstructor    //Генерирует конструктор только для обязательных полей класса.
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
 public class UserController {
