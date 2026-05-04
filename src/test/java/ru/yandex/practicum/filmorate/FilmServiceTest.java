@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.validation.Create;
 
 import java.time.LocalDate;
@@ -34,7 +35,7 @@ class FilmServiceTest {
 
     @BeforeEach
     void setUp() {
-        filmService = new FilmService(new InMemoryFilmStorage());
+        filmService = new FilmService(new InMemoryFilmStorage(), new InMemoryUserStorage());
     }
 
     @Test
@@ -60,15 +61,13 @@ class FilmServiceTest {
     @Test
     void createFilmWithDescriptionExactly200CharsShouldPass() {
         String desc = "a".repeat(200);
-        Film film = new Film(null, "Title",
-                desc, LocalDate.now(), 90L, new HashSet<>());
+        Film film = new Film(null, "Title", desc, LocalDate.now(), 90L, new HashSet<>());
         assertDoesNotThrow(() -> filmService.create(film));
     }
 
     @Test
     void createFilmWithNullDescriptionShouldNotThrow() {
-        Film film = new Film(null, "Title",
-                null, LocalDate.now(), 120L, new HashSet<>());
+        Film film = new Film(null, "Title", null, LocalDate.now(), 120L, new HashSet<>());
         assertDoesNotThrow(() -> filmService.create(film));
     }
 
@@ -76,11 +75,9 @@ class FilmServiceTest {
     void updateExistingFilmShouldChangeFields() {
         Film original = filmService.create(
                 new Film(null, "Original", "Desc",
-                        LocalDate.of(2000, 1, 1), 100L,
-                        new HashSet<>()));
+                        LocalDate.of(2000, 1, 1), 100L, new HashSet<>()));
         Film update = new Film(original.getId(), "Updated", "New desc",
-                LocalDate.of(2001, 2, 2), 150L,
-                new HashSet<>());
+                LocalDate.of(2001, 2, 2), 150L, new HashSet<>());
         Film result = filmService.update(update);
         assertEquals("Updated", result.getName());
         assertEquals("New desc", result.getDescription());
@@ -90,8 +87,7 @@ class FilmServiceTest {
 
     @Test
     void updateNonExistentFilmShouldThrowNotFoundException() {
-        Film film = new Film(999L, "Name",
-                "Desc", LocalDate.now(), 120L, new HashSet<>());
+        Film film = new Film(999L, "Name", "Desc", LocalDate.now(), 120L, new HashSet<>());
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> filmService.update(film));
         assertEquals("Film with id 999 not found", ex.getMessage());
@@ -194,8 +190,7 @@ class FilmServiceTest {
 
     @Test
     void filmNameMustNotBeBlank() {
-        Film film = new Film(null, "   ",
-                "desc", LocalDate.now(), 120L, new HashSet<>());
+        Film film = new Film(null, "   ", "desc", LocalDate.now(), 120L, new HashSet<>());
         Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -205,8 +200,7 @@ class FilmServiceTest {
     @Test
     void filmDescriptionMustNotExceed200Chars() {
         String desc = "a".repeat(201);
-        Film film = new Film(null, "Title",
-                desc, LocalDate.now(), 90L, new HashSet<>());
+        Film film = new Film(null, "Title", desc, LocalDate.now(), 90L, new HashSet<>());
         Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -225,8 +219,7 @@ class FilmServiceTest {
 
     @Test
     void releaseDateMustNotBeNull() {
-        Film film = new Film(null, "Title",
-                "desc", null, 120L, new HashSet<>());
+        Film film = new Film(null, "Title", "desc", null, 120L, new HashSet<>());
         Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -235,8 +228,7 @@ class FilmServiceTest {
 
     @Test
     void durationMustBePositive() {
-        Film film = new Film(null, "Film",
-                "desc", LocalDate.now(), 0L, new HashSet<>());
+        Film film = new Film(null, "Film", "desc", LocalDate.now(), 0L, new HashSet<>());
         Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
