@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.validation.Create;
@@ -14,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 @EqualsAndHashCode(of = {"email", "login"})
-@AllArgsConstructor
 @Data
 public class User {
 
@@ -47,4 +45,25 @@ public class User {
 
     @JsonIgnore
     private Set<Long> friends = new HashSet<>();
+    public User() {
+        this.friends = new HashSet<>();
+    }
+
+    public User(Long id, String email, String login, String name, LocalDate birthday) {
+        this.id = id;
+        this.email = email;
+        this.login = login;
+        this.name = name;
+        this.birthday = birthday;
+        this.friends = new HashSet<>();
+    }
+
+    public User(Long id, String email, String login, String name, LocalDate birthday, Set<Long> friends) {
+        this.id = id;
+        this.email = email;
+        this.login = login;
+        this.name = name;
+        this.birthday = birthday;
+        this.friends = friends != null ? friends : new HashSet<>();
+    }
 }
