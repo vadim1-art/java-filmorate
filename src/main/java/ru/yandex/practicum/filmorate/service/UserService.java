@@ -13,35 +13,33 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class UserService {
     private final UserStorage userStorage;
 
-
     public void addFriend(Long userId, Long friendId) {
         User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
         User friend = userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Friend not found"));
+                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
     }
 
     public void deleteFriend(Long userId, Long friendId) {
         User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
         User friend = userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Friend not found"));
+                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
     }
 
     public Collection<User> getFriends(Long userId) {
         User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
         return user.getFriends().stream()
                 .map(friendId -> userStorage.findById(friendId)
                         .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found")))
@@ -55,7 +53,7 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User with id " + otherUserId + " not found"));
 
         Set<Long> commonIds = new HashSet<>(user.getFriends());
-        commonIds.retainAll(otherUser.getFriends());  // только общие ID
+        commonIds.retainAll(otherUser.getFriends());
 
         return commonIds.stream()
                 .map(id -> userStorage.findById(id)
@@ -67,37 +65,35 @@ public class UserService {
         return userStorage.findAll();
     }
 
-    public User update(User updatedUser) {
-        User oldUser = userStorage.findById(updatedUser.getId())
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        if (oldUser == null) {
-            throw new NotFoundException("User with id " + updatedUser.getId() + " not found");
-        }
+    public User update(User newUser) {
+        User oldUser = userStorage.findById(newUser.getId())
+                .orElseThrow(() -> new NotFoundException("User with id " + newUser.getId() + " not found"));
 
-        if (updatedUser.getEmail() != null && !updatedUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
+        if (newUser.getEmail() != null && !newUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
             boolean emailExists = userStorage.findAll().stream()
-                    .anyMatch(f -> f.getName().equalsIgnoreCase(updatedUser.getEmail()));
+                    .anyMatch(u -> !u.getId().equals(oldUser.getId())
+                            && u.getEmail().equalsIgnoreCase(newUser.getEmail()));
             if (emailExists) {
                 throw new DuplicatedDataException("Email already in use");
             }
-            oldUser.setEmail(updatedUser.getEmail());
+            oldUser.setEmail(newUser.getEmail());
         }
 
-        if (updatedUser.getLogin() != null && !updatedUser.getLogin().isBlank()) {
-            oldUser.setLogin(updatedUser.getLogin());
+        if (newUser.getLogin() != null && !newUser.getLogin().isBlank()) {
+            oldUser.setLogin(newUser.getLogin());
         }
-        if (updatedUser.getName() != null && !updatedUser.getName().isBlank()) {
-            oldUser.setName(updatedUser.getName());
+        if (newUser.getName() != null) {
+            oldUser.setName(newUser.getName().isBlank() ? oldUser.getLogin() : newUser.getName());
         }
-        if (updatedUser.getBirthday() != null) {
-            oldUser.setBirthday(updatedUser.getBirthday());
+        if (newUser.getBirthday() != null) {
+            oldUser.setBirthday(newUser.getBirthday());
         }
         return userStorage.update(oldUser);
     }
 
     public User create(User user) {
         boolean emailExists = userStorage.findAll().stream()
-                .anyMatch(f -> f.getName().equalsIgnoreCase(user.getEmail()));
+                .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
         if (emailExists) {
             throw new DuplicatedDataException("Email already in use");
         }
@@ -113,8 +109,8 @@ public class UserService {
     }
 
     private long getNextId() {
-        return userStorage.getKey().stream()
-                .mapToLong(id -> id)
+        return userStorage.findAll().stream()
+                .mapToLong(User::getId)
                 .max()
                 .orElse(0) + 1;
     }
