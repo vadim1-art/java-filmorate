@@ -26,7 +26,7 @@ public class FilmService {
 
     public void removeLike(Long filmId, Long userId) {
         Film film = filmStorage.findById(filmId)
-                .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
+                .orElseThrow(() -> new NotFoundException("ilm with id " + filmId + " not found"));
         film.getLikesUnderFilm().remove(userId);
     }
 

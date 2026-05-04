@@ -57,7 +57,7 @@ public class UserService {
 
         return commonIds.stream()
                 .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Friend with id " + id + " not found")))
+                        .orElseThrow(() -> new NotFoundException("riend with id " + id + " not found")))
                 .collect(Collectors.toList());
     }
 
