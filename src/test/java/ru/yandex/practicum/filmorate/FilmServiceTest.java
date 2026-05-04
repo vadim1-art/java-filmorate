@@ -60,8 +60,8 @@ class FilmServiceTest {
     @Test
     void createFilmWithDescriptionExactly200CharsShouldPass() {
         String desc = "a".repeat(200);
-        Film film = new Film(null, "Title"
-                , desc, LocalDate.now(), 90L, new HashSet<>());
+        Film film = new Film(null, "Title",
+                desc, LocalDate.now(), 90L, new HashSet<>());
         assertDoesNotThrow(() -> filmService.create(film));
     }
 
