@@ -43,7 +43,7 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public Film update(Film updatedFilm ) {
+    public Film update(Film updatedFilm) {
         Film oldFilm = filmStorage.findById(updatedFilm.getId())
                 .orElseThrow(() -> new NotFoundException("Film not found"));
         if (oldFilm == null) {
