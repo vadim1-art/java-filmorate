@@ -65,28 +65,28 @@ public class UserService {
         return userStorage.findAll();
     }
 
-    public User update(User newUser) {
-        User oldUser = userStorage.findById(newUser.getId())
-                .orElseThrow(() -> new NotFoundException("User with id " + newUser.getId() + " not found"));
+    public User update(User updateUser) {
+        User oldUser = userStorage.findById(updateUser.getId())
+                .orElseThrow(() -> new NotFoundException("User with id " + updateUser.getId() + " not found"));
 
-        if (newUser.getEmail() != null && !newUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
+        if (updateUser.getEmail() != null && !updateUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
             boolean emailExists = userStorage.findAll().stream()
                     .anyMatch(u -> !u.getId().equals(oldUser.getId())
-                            && u.getEmail().equalsIgnoreCase(newUser.getEmail()));
+                            && u.getEmail().equalsIgnoreCase(updateUser.getEmail()));
             if (emailExists) {
                 throw new DuplicatedDataException("Email already in use");
             }
-            oldUser.setEmail(newUser.getEmail());
+            oldUser.setEmail(updateUser.getEmail());
         }
 
-        if (newUser.getLogin() != null && !newUser.getLogin().isBlank()) {
-            oldUser.setLogin(newUser.getLogin());
+        if (updateUser.getLogin() != null && !updateUser.getLogin().isBlank()) {
+            oldUser.setLogin(updateUser.getLogin());
         }
-        if (newUser.getName() != null && !newUser.getName().isBlank()) {
-            oldUser.setName(newUser.getName());
+        if (updateUser.getName() != null && !updateUser.getName().isBlank()) {
+            oldUser.setName(updateUser.getName());
         }
-        if (newUser.getBirthday() != null) {
-            oldUser.setBirthday(newUser.getBirthday());
+        if (updateUser.getBirthday() != null) {
+            oldUser.setBirthday(updateUser.getBirthday());
         }
         return userStorage.update(oldUser);
     }

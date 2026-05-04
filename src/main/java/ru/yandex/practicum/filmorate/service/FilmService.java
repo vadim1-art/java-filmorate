@@ -47,28 +47,28 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public Film update(Film newFilm) {
-        Film oldFilm = filmStorage.findById(newFilm.getId())
-                .orElseThrow(() -> new NotFoundException("Film with id " + newFilm.getId() + " not found"));
+    public Film update(Film updateFilm) {
+        Film oldFilm = filmStorage.findById(updateFilm.getId())
+                .orElseThrow(() -> new NotFoundException("Film with id " + updateFilm.getId() + " not found"));
 
-        if (newFilm.getName() != null && !newFilm.getName().isBlank()
-                && !newFilm.getName().equals(oldFilm.getName())) {
+        if (updateFilm.getName() != null && !updateFilm.getName().isBlank()
+                && !updateFilm.getName().equals(oldFilm.getName())) {
             boolean nameExists = filmStorage.findAll().stream()
-                    .anyMatch(f -> f.getName().equalsIgnoreCase(newFilm.getName()));
+                    .anyMatch(f -> f.getName().equalsIgnoreCase(updateFilm.getName()));
             if (nameExists) {
                 throw new DuplicatedDataException("Film name already in use");
             }
-            oldFilm.setName(newFilm.getName());
+            oldFilm.setName(updateFilm.getName());
         }
 
-        if (newFilm.getDescription() != null && !newFilm.getDescription().isBlank()) {
-            oldFilm.setDescription(newFilm.getDescription());
+        if (updateFilm.getDescription() != null && !updateFilm.getDescription().isBlank()) {
+            oldFilm.setDescription(updateFilm.getDescription());
         }
-        if (newFilm.getReleaseDate() != null) {
-            oldFilm.setReleaseDate(newFilm.getReleaseDate());
+        if (updateFilm.getReleaseDate() != null) {
+            oldFilm.setReleaseDate(updateFilm.getReleaseDate());
         }
-        if (newFilm.getDuration() != null && newFilm.getDuration() >= 0) {
-            oldFilm.setDuration(newFilm.getDuration());
+        if (updateFilm.getDuration() != null && updateFilm.getDuration() >= 0) {
+            oldFilm.setDuration(updateFilm.getDuration());
         }
         return filmStorage.update(oldFilm);
     }
