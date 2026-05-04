@@ -1,68 +1,92 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 
+
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class FilmService {
-    private final Map<Long, Film> films = new HashMap<>();
+    private final FilmStorage filmStorage;
 
 
-    public Collection<Film> getFilms() {
-        return films.values();
+    public void addLike(Long filmId, Long userId) {
+        Film film = filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Film not found"));
+        film.getLikesUnderFilm().add(userId);
     }
 
-    public Film update(Film newFilm) {
-        Film oldFilm = films.get(newFilm.getId());
+    public void removeLike(Long filmId, Long userId) {
+        Film film = filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Film not found"));
+        film.getLikesUnderFilm().remove(userId);
+    }
+
+    public Collection<Film> topFilms(int limit) {
+        return filmStorage.findAll().stream()
+                .sorted(Comparator.comparingInt((Film f) -> f.getLikesUnderFilm().size()).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getFilms() {
+        return filmStorage.findAll();
+    }
+
+    public Film update(Film updatedFilm ) {
+        Film oldFilm = filmStorage.findById(updatedFilm.getId())
+                .orElseThrow(() -> new NotFoundException("Film not found"));
         if (oldFilm == null) {
-            throw new NotFoundException("Film with id " + newFilm.getId() + " not found");
+            throw new NotFoundException("Film with id " + updatedFilm.getId() + " not found");
         }
 
-        if (newFilm.getName() != null && !newFilm.getName().isBlank()
-                && !newFilm.getName().equals(oldFilm.getName())) {
-            boolean nameExists = films.values().stream()
-                    .anyMatch(f -> f.getName().equalsIgnoreCase(newFilm.getName()));
+        if (updatedFilm.getName() != null && !updatedFilm.getName().isBlank()
+                && !updatedFilm.getName().equals(oldFilm.getName())) {
+            boolean nameExists = filmStorage.findAll().stream()
+                    .anyMatch(f -> f.getName().equalsIgnoreCase(updatedFilm.getName()));
             if (nameExists) {
                 throw new DuplicatedDataException("Film name already in use");
             }
-            oldFilm.setName(newFilm.getName());
+            oldFilm.setName(updatedFilm.getName());
         }
 
-        if (newFilm.getDescription() != null && !newFilm.getDescription().isBlank()) {
-            oldFilm.setDescription(newFilm.getDescription());
+        if (updatedFilm.getDescription() != null && !updatedFilm.getDescription().isBlank()) {
+            oldFilm.setDescription(updatedFilm.getDescription());
         }
-        if (newFilm.getReleaseDate() != null) {
-            oldFilm.setReleaseDate(newFilm.getReleaseDate());
+        if (updatedFilm.getReleaseDate() != null) {
+            oldFilm.setReleaseDate(updatedFilm.getReleaseDate());
         }
-        if (newFilm.getDuration() != null && newFilm.getDuration() >= 0) { // Без newFilm.getDuration() >= 0 тест падает в GitHub
-            oldFilm.setDuration(newFilm.getDuration());
+        if (updatedFilm.getDuration() != null && updatedFilm.getDuration() >= 0) { // Без newFilm.getDuration() >= 0 тест падает в GitHub
+            oldFilm.setDuration(updatedFilm.getDuration());
         }
-        return oldFilm;
+        return filmStorage.update(oldFilm);
     }
 
     public Film create(Film film) {
-        boolean nameExists = films.values().stream()
+        boolean nameExists = filmStorage.findAll().stream()    // Проверка уникальности названия
                 .anyMatch(f -> f.getName().equalsIgnoreCase(film.getName()));
         if (nameExists) {
             throw new DuplicatedDataException("Film name already in use");
         }
 
         film.setId(getNextId());
-        films.put(film.getId(), film);
+        filmStorage.save(film);
         log.info("Created film: {}", film);
         return film;
     }
 
     private long getNextId() {
-        return films.keySet().stream()
+        return filmStorage.getKey().stream()
                 .mapToLong(id -> id)
                 .max()
                 .orElse(0) + 1;

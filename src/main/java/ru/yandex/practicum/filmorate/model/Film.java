@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,6 +8,8 @@ import ru.yandex.practicum.filmorate.validation.Create;
 import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @AllArgsConstructor
 @Data
@@ -33,4 +36,7 @@ public class Film {
         if (releaseDate == null) return true;
         return !releaseDate.isBefore(LocalDate.of(1895, 12, 28));
     }
+
+    @JsonIgnore
+    private Set<Long> likesUnderFilm = new HashSet<>();
 }

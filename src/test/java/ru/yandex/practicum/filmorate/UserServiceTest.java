@@ -11,10 +11,12 @@ import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.validation.Create;
 import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,13 +35,13 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService();
+        userService = new UserService(new InMemoryUserStorage());
     }
 
     @Test
     void createValidUserShouldReturnUserWithId() {
         User user = new User(null, "test@ya.ru", "login", "name",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User created = userService.create(user);
         assertNotNull(created.getId());
         assertEquals("test@ya.ru", created.getEmail());
@@ -48,7 +50,7 @@ class UserServiceTest {
     @Test
     void createUserWithEmptyNameShouldUseLoginAsName() {
         User user = new User(null, "test@mail.ru", "MyLogin", "",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User created = userService.create(user);
         assertEquals("MyLogin", created.getName());
     }
@@ -56,24 +58,25 @@ class UserServiceTest {
     @Test
     void createUserWithNullNameShouldUseLoginAsName() {
         User user = new User(null, "test@mail.ru", "MyLogin", null,
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User created = userService.create(user);
         assertEquals("MyLogin", created.getName());
     }
 
     @Test
     void createUserWithBirthdayExactlyNowShouldBeAllowed() {
-        User user = new User(null, "test@ya.ru", "login", "name", LocalDate.now());
+        User user = new User(null, "test@ya.ru", "login", "name",
+                LocalDate.now(), new HashSet<>());
         assertDoesNotThrow(() -> userService.create(user));
     }
 
     @Test
     void createDuplicateEmailShouldThrowException() {
         User first = new User(null, "dup@ya.ru", "dup", "name",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         userService.create(first);
         User second = new User(null, "dup@ya.ru", "other", "otherName",
-                LocalDate.now().minusDays(100));
+                LocalDate.now().minusDays(100), new HashSet<>());
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.create(second));
         assertEquals("Email already in use", ex.getMessage());
@@ -83,9 +86,9 @@ class UserServiceTest {
     void updateExistingUserShouldChangeFields() {
         User original = userService.create(
                 new User(null, "old@ya.ru", "oldLogin", "OldName",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), "new@ya.ru", "newLogin", "NewName",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("new@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
@@ -94,7 +97,8 @@ class UserServiceTest {
 
     @Test
     void updateNonExistentUserShouldThrowNotFoundException() {
-        User user = new User(999L, "a@b.com", "login", "name", LocalDate.now());
+        User user = new User(999L, "a@b.com", "login", "name",
+                LocalDate.now(), new HashSet<>());
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> userService.update(user));
         assertEquals("User with id 999 not found", ex.getMessage());
@@ -104,12 +108,12 @@ class UserServiceTest {
     void updateUserWithDuplicateEmailShouldThrowException() {
         User first = userService.create(
                 new User(null, "first@ya.ru", "firstLogin", "First",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User second = userService.create(
                 new User(null, "second@ya.ru", "secondLogin", "Second",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(second.getId(), "first@ya.ru", "newLogin", "irrelevant",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
                 () -> userService.update(update));
         assertEquals("Email already in use", ex.getMessage());
@@ -119,9 +123,9 @@ class UserServiceTest {
     void updateUserWithSameEmailDifferentCaseShouldNotChangeEmail() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "Name",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), "USER@ya.ru", "newLogin", "NewName",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("user@ya.ru", result.getEmail());
         assertEquals("newLogin", result.getLogin());
@@ -132,9 +136,9 @@ class UserServiceTest {
     void updateUserWithNullEmailShouldKeepOldEmail() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "Name",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), null, "newLogin", "NewName",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("user@ya.ru", result.getEmail());
     }
@@ -143,9 +147,9 @@ class UserServiceTest {
     void updateUserWithBlankLoginShouldKeepOldLogin() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "oldLogin", "Name",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), null, "   ", "NewName",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("oldLogin", result.getLogin());
     }
@@ -154,9 +158,9 @@ class UserServiceTest {
     void updateUserWithNullNameShouldKeepOldName() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "OldName",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), null, null, null,
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("OldName", result.getName());
     }
@@ -165,9 +169,9 @@ class UserServiceTest {
     void updateUserWithBlankNameShouldKeepOldName() {
         User original = userService.create(
                 new User(null, "user@ya.ru", "login", "OldName",
-                        LocalDate.now().minusDays(365)));
+                        LocalDate.now().minusDays(365), new HashSet<>()));
         User update = new User(original.getId(), null, null, "   ",
-                LocalDate.now().minusDays(365));
+                LocalDate.now().minusDays(365), new HashSet<>());
         User result = userService.update(update);
         assertEquals("OldName", result.getName());
     }
@@ -176,15 +180,18 @@ class UserServiceTest {
     void updateUserWithNullBirthdayShouldKeepOldBirthday() {
         LocalDate bday = LocalDate.now().minusYears(20);
         User original = userService.create(
-                new User(null, "user@ya.ru", "login", "Name", bday));
-        User update = new User(original.getId(), null, null, null, null);
+                new User(null, "user@ya.ru",
+                        "login", "Name", bday, new HashSet<>()));
+        User update = new User(original.getId(), null,
+                null, null, null, new HashSet<>());
         User result = userService.update(update);
         assertEquals(bday, result.getBirthday());
     }
 
     @Test
     void userEmailMustNotBeBlank() {
-        User user = new User(null, "   ", "login", "name", LocalDate.now());
+        User user = new User(null, "   ", "login", "name",
+                LocalDate.now(), new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -193,7 +200,8 @@ class UserServiceTest {
 
     @Test
     void userEmailMustBeValid() {
-        User user = new User(null, "not-an-email", "login", "name", LocalDate.now());
+        User user = new User(null, "not-an-email", "login", "name",
+                LocalDate.now(), new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -202,7 +210,8 @@ class UserServiceTest {
 
     @Test
     void userLoginMustNotBeBlank() {
-        User user = new User(null, "a@b.com", "  ", "name", LocalDate.now());
+        User user = new User(null, "a@b.com", "  ", "name",
+                LocalDate.now(), new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -212,7 +221,7 @@ class UserServiceTest {
     @Test
     void userBirthdayMustNotBeInFuture() {
         User user = new User(null, "a@b.com", "login",
-                "name", LocalDate.now().plusDays(1));
+                "name", LocalDate.now().plusDays(1), new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -221,7 +230,8 @@ class UserServiceTest {
 
     @Test
     void userBirthdayMustNotBeNull() {
-        User user = new User(null, "a@b.com", "login", "name", null);
+        User user = new User(null, "a@b.com", "login", "name",
+                null, new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
@@ -230,7 +240,8 @@ class UserServiceTest {
 
     @Test
     void updateUserIdMustNotBeNull() {
-        User user = new User(null, "a@b.com", "login", "name", LocalDate.now());
+        User user = new User(null, "a@b.com", "login", "name",
+                LocalDate.now(), new HashSet<>());
         Set<ConstraintViolation<User>> violations = validator.validate(user, Update.class);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
