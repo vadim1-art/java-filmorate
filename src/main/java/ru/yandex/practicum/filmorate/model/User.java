@@ -45,6 +45,7 @@ public class User {
 
     @JsonIgnore
     private Set<Long> friends = new HashSet<>();
+
     public User() {
         this.friends = new HashSet<>();
     }
