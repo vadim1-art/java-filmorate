@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.validation.Create;
@@ -15,6 +16,7 @@ import java.util.Set;
 
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"email", "login"})
+@Builder
 @Data
 public class User {
 
@@ -46,5 +48,6 @@ public class User {
     private LocalDate birthday;
 
     @JsonIgnore
+    @Builder.Default
     private Set<Long> friends = new HashSet<>();
 }

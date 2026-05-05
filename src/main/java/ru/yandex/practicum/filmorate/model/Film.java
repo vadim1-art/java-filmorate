@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.Create;
 import ru.yandex.practicum.filmorate.validation.Update;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @AllArgsConstructor
+@Builder
 @Data
 public class Film {
 
@@ -38,5 +40,6 @@ public class Film {
     }
 
     @JsonIgnore
+    @Builder.Default
     private Set<Long> likesUnderFilm = new HashSet<>();
 }
