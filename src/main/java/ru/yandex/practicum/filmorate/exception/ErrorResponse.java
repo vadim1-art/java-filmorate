@@ -1,13 +1,9 @@
 package ru.yandex.practicum.filmorate.exception;
 
-public class ErrorResponse {
-    private final String error;
+import java.time.LocalDateTime;
 
-    public ErrorResponse(String error) {
-        this.error = error;
-    }
-
-    public String getError() {
-        return error;
+public record ErrorResponse(String error, int status, LocalDateTime timestamp) {
+    public ErrorResponse(String error, int status) {
+        this(error, status, LocalDateTime.now());
     }
 }
