@@ -67,7 +67,7 @@ public class FilmService {
         if (updateFilm.getReleaseDate() != null) {
             oldFilm.setReleaseDate(updateFilm.getReleaseDate());
         }
-        if (updateFilm.getDuration() != null && updateFilm.getDuration() > 0) {
+        if (updateFilm.getDuration() != null && updateFilm.getDuration() >= 0) {
             oldFilm.setDuration(updateFilm.getDuration());
         }
         return filmStorage.update(oldFilm);
