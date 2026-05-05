@@ -10,8 +10,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -42,9 +42,13 @@ public class FilmService {
         film.getLikesUnderFilm().remove(userId);
     }
 
-    public Collection<Film> topFilms(int limit) {
+    public List<Film> getPopular(int limit) {
         return filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt((Film f) -> f.getLikesUnderFilm().size()).reversed())
+                .sorted((f1, f2) -> {
+                    int likes1 = (f1.getLikesUnderFilm() == null) ? 0 : f1.getLikesUnderFilm().size();
+                    int likes2 = (f2.getLikesUnderFilm() == null) ? 0 : f2.getLikesUnderFilm().size();
+                    return Integer.compare(likes2, likes1);
+                })
                 .limit(limit)
                 .collect(Collectors.toList());
     }
