@@ -168,6 +168,29 @@ class FilmServiceTest {
     }
 
     @Test
+    void updateFilmWithOtherFilmNameDifferentCaseShouldThrowException() {
+        filmService.create(new Film(null, "Original",
+                "Desc", LocalDate.now(), 100L, new HashSet<>()));
+        Film second = filmService.create(new Film(null, "Second",
+                "Desc", LocalDate.now(), 100L, new HashSet<>()));
+        Film update = new Film(second.getId(), "ORIGINAL",
+                "Desc", LocalDate.now(), 100L, new HashSet<>());
+        DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
+                () -> filmService.update(update));
+        assertEquals("Film name already in use", ex.getMessage());
+    }
+
+    @Test
+    void updateFilmOwnNameDifferentCaseShouldNotThrowException() {
+        Film original = filmService.create(new Film(null, "Original",
+                "Desc", LocalDate.now(), 100L, new HashSet<>()));
+        Film update = new Film(original.getId(), "ORIGINAL",
+                "Desc", LocalDate.now(), 100L, new HashSet<>());
+        Film result = assertDoesNotThrow(() -> filmService.update(update));
+        assertEquals("ORIGINAL", result.getName());
+    }
+
+    @Test
     void updateFilmWithZeroDurationShouldChangeDuration() {
         Film original = filmService.create(new Film(null, "Film",
                 "desc", LocalDate.now(), 120L, new HashSet<>()));
