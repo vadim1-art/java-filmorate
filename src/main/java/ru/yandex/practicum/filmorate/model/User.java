@@ -28,7 +28,7 @@ public class User {
     private String email;
 
     @Pattern(
-            regexp = "^[^<>&\"']+$",
+            regexp = "^[^<>&\"]+$",
             groups = {Create.class, Update.class},
             message = "Invalid characters"
     )
@@ -36,7 +36,7 @@ public class User {
     private String login;
 
     @Pattern(
-            regexp = "^[^<>&\"']+$",
+            regexp = "^[^<>&\"]+$",
             groups = {Create.class, Update.class},
             message = "Invalid characters"
     )

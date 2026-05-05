@@ -8,9 +8,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -49,11 +47,9 @@ public class UserService {
         User user = userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
 
-        if  (user.getFriends() == null) {
-            return new HashSet<>();
-        }
-
-        return user.getFriends().stream()
+        return Optional.ofNullable(user.getFriends())
+                .orElse(Collections.emptySet())
+                .stream()
                 .map(friendId -> userStorage.findById(friendId)
                         .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found")))
                 .collect(Collectors.toList());
