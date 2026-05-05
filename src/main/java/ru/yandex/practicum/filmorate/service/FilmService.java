@@ -54,7 +54,7 @@ public class FilmService {
         if (updateFilm.getName() != null && !updateFilm.getName().isBlank()
                 && !updateFilm.getName().equals(oldFilm.getName())) {
             boolean nameExists = filmStorage.findAll().stream()
-                    .anyMatch(f -> f.getName().equalsIgnoreCase(updateFilm.getName()));
+                    .anyMatch(f -> !f.getId().equals(oldFilm.getId()) && f.getName().equalsIgnoreCase(updateFilm.getName()));
             if (nameExists) {
                 throw new DuplicatedDataException("Film name already in use");
             }
