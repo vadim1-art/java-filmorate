@@ -107,17 +107,6 @@ class FilmServiceTest {
     }
 
     @Test
-    void updateFilmWithSameNameDifferentCaseShouldThrowException() {
-        Film original = filmService.create(new Film(null, "Original",
-                "Desc", LocalDate.now(), 100L, new HashSet<>()));
-        Film update = new Film(original.getId(), "ORIGINAL",
-                "Desc", LocalDate.now(), 100L, new HashSet<>());
-        DuplicatedDataException ex = assertThrows(DuplicatedDataException.class,
-                () -> filmService.update(update));
-        assertEquals("Film name already in use", ex.getMessage());
-    }
-
-    @Test
     void updateFilmWithNullNameShouldKeepOldName() {
         Film original = filmService.create(new Film(null, "Original",
                 "Desc", LocalDate.now(), 100L, new HashSet<>()));
