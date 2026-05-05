@@ -96,6 +96,9 @@ public class UserService {
         if (updateUser.getBirthday() != null) {
             oldUser.setBirthday(updateUser.getBirthday());
         }
+        if (updateUser.getFriends() == null) {
+            updateUser.setFriends(oldUser.getFriends() != null ? oldUser.getFriends() : new HashSet<>());
+        }
         return userStorage.update(oldUser);
     }
 

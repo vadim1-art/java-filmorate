@@ -76,6 +76,9 @@ public class FilmService {
         if (updateFilm.getDuration() != null && updateFilm.getDuration() >= 0) {
             oldFilm.setDuration(updateFilm.getDuration());
         }
+        if (updateFilm.getLikesUnderFilm() != null) {
+            updateFilm.setLikesUnderFilm(oldFilm.getLikesUnderFilm() != null ? oldFilm.getLikesUnderFilm() : new HashSet<>());
+        }
         return filmStorage.update(oldFilm);
     }
 
