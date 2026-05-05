@@ -25,7 +25,7 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
-        film.getLikesUnderFilm().add(userId);   // теперь userId!
+        film.getLikesUnderFilm().add(userId);
     }
 
     public void removeLike(Long filmId, Long userId) {
