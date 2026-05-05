@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -12,6 +13,7 @@ import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.Collection;
 
+@Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/films")
@@ -46,9 +48,8 @@ public class FilmController {
         filmService.removeLike(filmId, userId);
     }
 
-    @NotNull(groups = Update.class, message = " Limit must not be null")
     @GetMapping("/popular")
-    public Collection<Film> topFilms(@RequestParam(defaultValue = "10") int limit) {
+    public Collection<Film> topFilms(@Positive @RequestParam(defaultValue = "10") int limit) {
         return filmService.topFilms(limit);
     }
 }
