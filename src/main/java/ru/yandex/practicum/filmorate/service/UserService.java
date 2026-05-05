@@ -39,6 +39,14 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
         User friend = userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
+
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
+        if (friend.getFriends() == null) {
+            friend.setFriends(new HashSet<>());
+        }
+
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
     }
