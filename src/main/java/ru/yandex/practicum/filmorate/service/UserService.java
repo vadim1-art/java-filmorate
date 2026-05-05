@@ -48,6 +48,11 @@ public class UserService {
     public Collection<User> getFriends(Long userId) {
         User user = userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+
+        if  (user.getFriends() == null) {
+            return new HashSet<>();
+        }
+
         return user.getFriends().stream()
                 .map(friendId -> userStorage.findById(friendId)
                         .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found")))
