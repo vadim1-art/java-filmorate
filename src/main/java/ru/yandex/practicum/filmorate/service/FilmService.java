@@ -11,13 +11,14 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class FilmService {
-    private final FilmStorage filmStorage;
+    final FilmStorage filmStorage;
     private final UserStorage userStorage;   // нужно для проверки существования пользователя
 
     public void addLike(Long filmId, Long userId) {
@@ -25,6 +26,11 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+
+        if (film.getLikesUnderFilm() == null) {
+            film.setLikesUnderFilm(new HashSet<>());
+        }
+
         film.getLikesUnderFilm().add(userId);
     }
 
