@@ -1,58 +1,118 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class UserService {
+    private final UserStorage userStorage;
 
-    private final Map<Long, User> users = new HashMap<>();
+    public void addFriend(Long userId, Long friendId) {
+        User user = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+        User friend = userStorage.findById(friendId)
+                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
 
-    public Collection<User> getUsers() {
-        return users.values();
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
+        if (friend.getFriends() == null) {
+            friend.setFriends(new HashSet<>());
+        }
+
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
     }
 
-    public User update(User newUser) {
-        if (newUser.getId() == null) {
-            throw new ValidationException("User id is null");
+    public void deleteFriend(Long userId, Long friendId) {
+        User user = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+        User friend = userStorage.findById(friendId)
+                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
+
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
         }
-        User oldUser = users.get(newUser.getId());
-        if (oldUser == null) {
-            throw new NotFoundException("User with id " + newUser.getId() + " not found");
+        if (friend.getFriends() == null) {
+            friend.setFriends(new HashSet<>());
         }
 
-        if (newUser.getEmail() != null && !newUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
-            boolean emailExists = users.values().stream()
-                    .anyMatch(u -> u.getEmail().equalsIgnoreCase(newUser.getEmail()));
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
+    }
+
+    public Collection<User> getFriends(Long userId) {
+        User user = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+
+        return Optional.ofNullable(user.getFriends())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(friendId -> userStorage.findById(friendId)
+                        .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found")))
+                .collect(Collectors.toList());
+    }
+
+    public Collection<User> getCommonFriends(Long userId, Long otherUserId) {
+        User user = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+        User otherUser = userStorage.findById(otherUserId)
+                .orElseThrow(() -> new NotFoundException("User with id " + otherUserId + " not found"));
+
+        Set<Long> commonIds = new HashSet<>(user.getFriends());
+        commonIds.retainAll(otherUser.getFriends());
+
+        return commonIds.stream()
+                .map(id -> userStorage.findById(id)
+                        .orElseThrow(() -> new NotFoundException("Friend with id " + id + " not found")))
+                .collect(Collectors.toList());
+    }
+
+    public Collection<User> getUsers() {
+        return userStorage.findAll();
+    }
+
+    public User update(User updateUser) {
+        User oldUser = userStorage.findById(updateUser.getId())
+                .orElseThrow(() -> new NotFoundException("User with id " + updateUser.getId() + " not found"));
+
+        if (updateUser.getEmail() != null && !updateUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
+            boolean emailExists = userStorage.findAll().stream()
+                    .anyMatch(u -> !u.getId().equals(oldUser.getId())
+                            && u.getEmail().equalsIgnoreCase(updateUser.getEmail()));
             if (emailExists) {
                 throw new DuplicatedDataException("Email already in use");
             }
-            oldUser.setEmail(newUser.getEmail());
+            oldUser.setEmail(updateUser.getEmail());
         }
 
-        if (newUser.getLogin() != null && !newUser.getLogin().isBlank()) {
-            oldUser.setLogin(newUser.getLogin());
+        if (updateUser.getLogin() != null && !updateUser.getLogin().isBlank()) {
+            oldUser.setLogin(updateUser.getLogin());
         }
-        if (newUser.getName() != null && !newUser.getName().isBlank()) {
-            oldUser.setName(newUser.getName());
+        if (updateUser.getName() != null && !updateUser.getName().isBlank()) {
+            oldUser.setName(updateUser.getName());
         }
-        if (newUser.getBirthday() != null) {
-            oldUser.setBirthday(newUser.getBirthday());
+        if (updateUser.getBirthday() != null) {
+            oldUser.setBirthday(updateUser.getBirthday());
         }
-        return oldUser;
+        if (updateUser.getFriends() == null) {
+            updateUser.setFriends(oldUser.getFriends() != null ? oldUser.getFriends() : new HashSet<>());
+        }
+        return userStorage.update(oldUser);
     }
 
     public User create(User user) {
-        boolean emailExists = users.values().stream()
+        boolean emailExists = userStorage.findAll().stream()
                 .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
         if (emailExists) {
             throw new DuplicatedDataException("Email already in use");
@@ -63,14 +123,14 @@ public class UserService {
         }
 
         user.setId(getNextId());
-        users.put(user.getId(), user);
+        userStorage.save(user);
         log.info("Created user: {}", user);
         return user;
     }
 
     private long getNextId() {
-        return users.keySet().stream()
-                .mapToLong(id -> id)
+        return userStorage.findAll().stream()
+                .mapToLong(User::getId)
                 .max()
                 .orElse(0) + 1;
     }

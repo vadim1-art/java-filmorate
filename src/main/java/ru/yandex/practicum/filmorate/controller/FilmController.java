@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -11,7 +12,7 @@ import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.Collection;
 
-
+@Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/films")
@@ -32,5 +33,22 @@ public class FilmController {
     @PutMapping
     public Film update(@Validated(Update.class) @RequestBody Film film) {
         return filmService.update(film);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike(@PathVariable("id") Long filmId,
+                        @PathVariable("userId") Long userId) {
+        filmService.addLike(filmId, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void removeLike(@PathVariable("id") Long filmId,
+                           @PathVariable("userId") Long userId) {
+        filmService.removeLike(filmId, userId);
+    }
+
+    @GetMapping("/popular")
+    public Collection<Film> topFilms(@Positive @RequestParam(defaultValue = "10") int limit) {
+        return filmService.topFilms(limit);
     }
 }

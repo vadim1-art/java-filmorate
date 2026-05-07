@@ -1,69 +1,107 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class FilmService {
-    private final Map<Long, Film> films = new HashMap<>();
+    final FilmStorage filmStorage;
+    private final UserStorage userStorage;   // нужно для проверки существования пользователя
 
+    public void addLike(Long filmId, Long userId) {
+        Film film = filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
 
-    public Collection<Film> getFilms() {
-        return films.values();
-    }
-
-    public Film update(Film newFilm) {
-        Film oldFilm = films.get(newFilm.getId());
-        if (oldFilm == null) {
-            throw new NotFoundException("Film with id " + newFilm.getId() + " not found");
+        if (film.getLikesUnderFilm() == null) {
+            film.setLikesUnderFilm(new HashSet<>());
         }
 
-        if (newFilm.getName() != null && !newFilm.getName().isBlank()
-                && !newFilm.getName().equals(oldFilm.getName())) {
-            boolean nameExists = films.values().stream()
-                    .anyMatch(f -> f.getName().equalsIgnoreCase(newFilm.getName()));
+        film.getLikesUnderFilm().add(userId);
+    }
+
+    public void removeLike(Long filmId, Long userId) {
+        Film film = filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
+        film.getLikesUnderFilm().remove(userId);
+    }
+
+    public List<Film> topFilms(int limit) {
+        return filmStorage.findAll().stream()
+                .sorted((f1, f2) -> {
+                    int likes1 = (f1.getLikesUnderFilm() == null) ? 0 : f1.getLikesUnderFilm().size();
+                    int likes2 = (f2.getLikesUnderFilm() == null) ? 0 : f2.getLikesUnderFilm().size();
+                    return Integer.compare(likes2, likes1);
+                })
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getFilms() {
+        return filmStorage.findAll();
+    }
+
+    public Film update(Film updateFilm) {
+        Film oldFilm = filmStorage.findById(updateFilm.getId())
+                .orElseThrow(() -> new NotFoundException("Film with id " + updateFilm.getId() + " not found"));
+
+        if (updateFilm.getName() != null && !updateFilm.getName().isBlank()
+                && !updateFilm.getName().equals(oldFilm.getName())) {
+            boolean nameExists = filmStorage.findAll().stream()
+                    .anyMatch(f -> !f.getId().equals(oldFilm.getId()) && f.getName().equalsIgnoreCase(updateFilm.getName()));
             if (nameExists) {
                 throw new DuplicatedDataException("Film name already in use");
             }
-            oldFilm.setName(newFilm.getName());
+            oldFilm.setName(updateFilm.getName());
         }
 
-        if (newFilm.getDescription() != null && !newFilm.getDescription().isBlank()) {
-            oldFilm.setDescription(newFilm.getDescription());
+        if (updateFilm.getDescription() != null && !updateFilm.getDescription().isBlank()) {
+            oldFilm.setDescription(updateFilm.getDescription());
         }
-        if (newFilm.getReleaseDate() != null) {
-            oldFilm.setReleaseDate(newFilm.getReleaseDate());
+        if (updateFilm.getReleaseDate() != null) {
+            oldFilm.setReleaseDate(updateFilm.getReleaseDate());
         }
-        if (newFilm.getDuration() != null && newFilm.getDuration() >= 0) { // Без newFilm.getDuration() >= 0 тест падает в GitHub
-            oldFilm.setDuration(newFilm.getDuration());
+        if (updateFilm.getDuration() != null && updateFilm.getDuration() >= 0) {
+            oldFilm.setDuration(updateFilm.getDuration());
         }
-        return oldFilm;
+        if (updateFilm.getLikesUnderFilm() != null) {
+            updateFilm.setLikesUnderFilm(oldFilm.getLikesUnderFilm() != null ? oldFilm.getLikesUnderFilm() : new HashSet<>());
+        }
+        return filmStorage.update(oldFilm);
     }
 
     public Film create(Film film) {
-        boolean nameExists = films.values().stream()
+        boolean nameExists = filmStorage.findAll().stream()
                 .anyMatch(f -> f.getName().equalsIgnoreCase(film.getName()));
         if (nameExists) {
             throw new DuplicatedDataException("Film name already in use");
         }
 
         film.setId(getNextId());
-        films.put(film.getId(), film);
+        filmStorage.save(film);
         log.info("Created film: {}", film);
         return film;
     }
 
     private long getNextId() {
-        return films.keySet().stream()
-                .mapToLong(id -> id)
+        return filmStorage.findAll().stream()
+                .mapToLong(Film::getId)
                 .max()
                 .orElse(0) + 1;
     }

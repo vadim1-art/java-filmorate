@@ -1,17 +1,22 @@
 package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.validation.Create;
 import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
-@EqualsAndHashCode(of = {"email", "login"})
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"email", "login"})
+@Builder
 @Data
 public class User {
 
@@ -23,7 +28,7 @@ public class User {
     private String email;
 
     @Pattern(
-            regexp = "^[^<>&\"']+$",
+            regexp = "^[^<>&\"]+$",
             groups = {Create.class, Update.class},
             message = "Invalid characters"
     )
@@ -31,7 +36,7 @@ public class User {
     private String login;
 
     @Pattern(
-            regexp = "^[^<>&\"']+$",
+            regexp = "^[^<>&\"]+$",
             groups = {Create.class, Update.class},
             message = "Invalid characters"
     )
@@ -41,4 +46,8 @@ public class User {
     @PastOrPresent(groups = {Create.class, Update.class}, message = "Birthday must be in the past or today")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate birthday;
+
+    @JsonIgnore
+    @Builder.Default
+    private Set<Long> friends = new HashSet<>();
 }
