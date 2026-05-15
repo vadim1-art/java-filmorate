@@ -13,6 +13,7 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User save(User user) {
         users.put(user.getId(), user);
+        return user;
     }
 
     @Override
