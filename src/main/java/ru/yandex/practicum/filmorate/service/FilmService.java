@@ -28,10 +28,38 @@ public class FilmService {
     private final JdbcTemplate jdbcTemplate;
 
     public Film create(Film film) {
+        // Проверяем MPA
+        if (film.getMpa() != null) {
+            checkMpaExists(film.getMpa().getId());
+        }
+
+        // Проверяем жанры (если они есть)
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            for (Genre genre : film.getGenres()) {
+                checkGenreExists(genre.getId());
+            }
+        }
+
         Film savedFilm = filmStorage.save(film);
         saveGenres(film);
         log.info("Добавлен новый фильм: {}", savedFilm);
         return getFilmById(savedFilm.getId());
+    }
+
+    private void checkMpaExists(int mpaId) {
+        String sql = "SELECT COUNT(*) FROM mpa_ratings WHERE mpa_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, mpaId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("MPA рейтинг с id " + mpaId + " не найден");
+        }
+    }
+
+    private void checkGenreExists(int genreId) {
+        String sql = "SELECT COUNT(*) FROM genres WHERE genre_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, genreId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("Жанр с id " + genreId + " не найден");
+        }
     }
 
     public Film update(Film film) {
