@@ -51,4 +51,9 @@ public class FilmController {
     public Collection<Film> topFilms(@Positive @RequestParam(defaultValue = "10") int limit) {
         return filmService.topFilms(limit);
     }
+
+    @GetMapping("/{id}")
+    public Film findById(@PathVariable Long id) {
+        return filmService.getFilmById(id);
+    }
 }
