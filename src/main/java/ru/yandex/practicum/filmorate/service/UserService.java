@@ -77,4 +77,9 @@ public class UserService {
         userStorage.findById(user.getId()).orElseThrow(() -> new NotFoundException("User not found"));
         return userStorage.update(user);
     }
+
+    public User getUserById(Long id) {
+        return userStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
+    }
 }
