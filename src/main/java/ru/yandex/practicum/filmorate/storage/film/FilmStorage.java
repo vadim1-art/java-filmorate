@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface FilmStorage {
 
-    void save(Film film);
+    Film save(Film film);
 
     Film update(Film film);
 
