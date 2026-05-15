@@ -2,136 +2,79 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class UserService {
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public void addFriend(Long userId, Long friendId) {
-        User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
-        User friend = userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
+        userStorage.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        userStorage.findById(friendId).orElseThrow(() -> new NotFoundException("Friend not found"));
 
-        if (user.getFriends() == null) {
-            user.setFriends(new HashSet<>());
-        }
-        if (friend.getFriends() == null) {
-            friend.setFriends(new HashSet<>());
-        }
-
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        String sql = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     public void deleteFriend(Long userId, Long friendId) {
-        User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
-        User friend = userStorage.findById(friendId)
-                .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found"));
-
-        if (user.getFriends() == null) {
-            user.setFriends(new HashSet<>());
-        }
-        if (friend.getFriends() == null) {
-            friend.setFriends(new HashSet<>());
-        }
-
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     public Collection<User> getFriends(Long userId) {
-        User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
-
-        return Optional.ofNullable(user.getFriends())
-                .orElse(Collections.emptySet())
-                .stream()
-                .map(friendId -> userStorage.findById(friendId)
-                        .orElseThrow(() -> new NotFoundException("Friend with id " + friendId + " not found")))
-                .collect(Collectors.toList());
+        userStorage.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        String sql = "SELECT u.* FROM users u JOIN friends f ON u.user_id = f.friend_id WHERE f.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            User user = new User();
+            user.setId(rs.getLong("user_id"));
+            user.setEmail(rs.getString("email"));
+            user.setLogin(rs.getString("login"));
+            user.setName(rs.getString("name"));
+            user.setBirthday(rs.getDate("birthday").toLocalDate());
+            return user;
+        }, userId);
     }
 
     public Collection<User> getCommonFriends(Long userId, Long otherUserId) {
-        User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
-        User otherUser = userStorage.findById(otherUserId)
-                .orElseThrow(() -> new NotFoundException("User with id " + otherUserId + " not found"));
-
-        Set<Long> commonIds = new HashSet<>(user.getFriends());
-        commonIds.retainAll(otherUser.getFriends());
-
-        return commonIds.stream()
-                .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Friend with id " + id + " not found")))
-                .collect(Collectors.toList());
+        String sql = "SELECT u.* FROM users u " +
+                "JOIN friends f1 ON u.user_id = f1.friend_id " +
+                "JOIN friends f2 ON u.user_id = f2.friend_id " +
+                "WHERE f1.user_id = ? AND f2.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            User user = new User();
+            user.setId(rs.getLong("user_id"));
+            user.setEmail(rs.getString("email"));
+            user.setLogin(rs.getString("login"));
+            user.setName(rs.getString("name"));
+            user.setBirthday(rs.getDate("birthday").toLocalDate());
+            return user;
+        }, userId, otherUserId);
     }
 
     public Collection<User> getUsers() {
         return userStorage.findAll();
     }
 
-    public User update(User updateUser) {
-        User oldUser = userStorage.findById(updateUser.getId())
-                .orElseThrow(() -> new NotFoundException("User with id " + updateUser.getId() + " not found"));
-
-        if (updateUser.getEmail() != null && !updateUser.getEmail().equalsIgnoreCase(oldUser.getEmail())) {
-            boolean emailExists = userStorage.findAll().stream()
-                    .anyMatch(u -> !u.getId().equals(oldUser.getId())
-                            && u.getEmail().equalsIgnoreCase(updateUser.getEmail()));
-            if (emailExists) {
-                throw new DuplicatedDataException("Email already in use");
-            }
-            oldUser.setEmail(updateUser.getEmail());
-        }
-
-        if (updateUser.getLogin() != null && !updateUser.getLogin().isBlank()) {
-            oldUser.setLogin(updateUser.getLogin());
-        }
-        if (updateUser.getName() != null && !updateUser.getName().isBlank()) {
-            oldUser.setName(updateUser.getName());
-        }
-        if (updateUser.getBirthday() != null) {
-            oldUser.setBirthday(updateUser.getBirthday());
-        }
-        if (updateUser.getFriends() == null) {
-            updateUser.setFriends(oldUser.getFriends() != null ? oldUser.getFriends() : new HashSet<>());
-        }
-        return userStorage.update(oldUser);
-    }
-
     public User create(User user) {
-        boolean emailExists = userStorage.findAll().stream()
-                .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
-        if (emailExists) {
-            throw new DuplicatedDataException("Email already in use");
-        }
-
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-
-        user.setId(getNextId());
         userStorage.save(user);
-        log.info("Created user: {}", user);
         return user;
     }
 
-    private long getNextId() {
-        return userStorage.findAll().stream()
-                .mapToLong(User::getId)
-                .max()
-                .orElse(0) + 1;
+    public User update(User user) {
+        userStorage.findById(user.getId()).orElseThrow(() -> new NotFoundException("User not found"));
+        return userStorage.update(user);
     }
 }
