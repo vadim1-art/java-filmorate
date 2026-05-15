@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -50,8 +51,7 @@ public class FilmService {
             film.setDescription(rs.getString("description"));
             film.setReleaseDate(rs.getDate("release_date").toLocalDate());
             film.setDuration(rs.getLong("duration"));
-            film.setMpa(new ru.yandex.practicum.filmorate.model.Mpa(rs.getInt("mpa_id"),
-                    rs.getString("mpa_name")));
+            film.setMpa(new ru.yandex.practicum.filmorate.model.Mpa(rs.getInt("mpa_id"), rs.getString("mpa_name")));
             return film;
         }, limit);
 
@@ -60,24 +60,41 @@ public class FilmService {
     }
 
     public Film create(Film film) {
+        boolean nameExists = filmStorage.findAll().stream()
+                .anyMatch(f -> f.getName().equalsIgnoreCase(film.getName()));
+        if (nameExists) {
+            throw new DuplicatedDataException("Film name already in use");
+        }
+
         filmStorage.save(film);
         saveGenres(film);
+        log.info("Created film: {}", film);
         return film;
     }
 
     public Film update(Film film) {
-        filmStorage.findById(film.getId()).orElseThrow(() -> new NotFoundException("Film not found"));
+        Film oldFilm = filmStorage.findById(film.getId())
+                .orElseThrow(() -> new NotFoundException("Film with id " + film.getId() + " not found"));
+
+        if (film.getName() != null && !film.getName().equalsIgnoreCase(oldFilm.getName())) {
+            boolean nameExists = filmStorage.findAll().stream()
+                    .anyMatch(f -> !f.getId().equals(film.getId()) && f.getName().equalsIgnoreCase(film.getName()));
+            if (nameExists) {
+                throw new DuplicatedDataException("Film name already in use");
+            }
+        }
+
         filmStorage.update(film);
         jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", film.getId());
         saveGenres(film);
+        log.info("Updated film: {}", film);
         return film;
     }
 
     private void saveGenres(Film film) {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
         for (Genre genre : film.getGenres()) {
-            jdbcTemplate.update("INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)",
-                    film.getId(), genre.getId());
+            jdbcTemplate.update("INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)", film.getId(), genre.getId());
         }
     }
 
