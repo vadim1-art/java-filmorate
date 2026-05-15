@@ -27,8 +27,17 @@ public class UserService {
     }
 
     public void deleteFriend(Long userId, Long friendId) {
+        getUserById(userId);
+        getUserById(friendId);
+
         String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sql, userId, friendId);
+        int rowsAffected = jdbcTemplate.update(sql, userId, friendId);
+
+        if (rowsAffected > 0) {
+            log.info("Пользователь {} удалил из друзей {}", userId, friendId);
+        } else {
+            log.info("Связи между {} и {} не было, удалять нечего", userId, friendId);
+        }
     }
 
     public Collection<User> getFriends(Long userId) {
