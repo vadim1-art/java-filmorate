@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface UserStorage {
 
-    void save(User user);
+    User save(User user);
 
     User update(User user);
 

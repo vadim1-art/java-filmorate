@@ -1,19 +1,19 @@
 package ru.yandex.practicum.filmorate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.yandex.practicum.filmorate.validation.Create;
 import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 @Data
 public class Film {
 
@@ -33,13 +33,14 @@ public class Film {
     @Positive(groups = {Create.class, Update.class}, message = "Duration must be positive")
     private Long duration;
 
+    @NotNull(groups = Create.class, message = "MPA rating is required")
+    private Mpa mpa;
+
+    private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
+
     @AssertTrue(groups = {Create.class, Update.class}, message = "Release date must not be before 28.12.1895")
     private boolean isReleaseDateValid() {
         if (releaseDate == null) return true;
         return !releaseDate.isBefore(LocalDate.of(1895, 12, 28));
     }
-
-    @JsonIgnore
-    @Builder.Default
-    private Set<Long> likesUnderFilm = new HashSet<>();
 }

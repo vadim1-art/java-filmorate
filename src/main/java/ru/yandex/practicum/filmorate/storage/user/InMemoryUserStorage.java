@@ -11,8 +11,9 @@ public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
 
     @Override
-    public void save(User user) {
+    public User save(User user) {
         users.put(user.getId(), user);
+        return user;
     }
 
     @Override
