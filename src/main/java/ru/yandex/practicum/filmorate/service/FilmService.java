@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.*;
@@ -67,11 +68,76 @@ public class FilmService {
         return film;
     }
 
+    // Методы для работы с лайками
+
+    public void addLike(Long filmId, Long userId) {
+        getFilmById(filmId);
+        checkUserExists(userId);
+
+        String sql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, filmId, userId);
+        log.info("Пользователь с id {} поставил лайк фильму с id {}", userId, filmId);
+    }
+
+    public void removeLike(Long filmId, Long userId) {
+        getFilmById(filmId);
+        checkUserExists(userId);
+
+        String sql = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
+        int rowsAffected = jdbcTemplate.update(sql, filmId, userId);
+
+        if (rowsAffected == 0) {
+            throw new NotFoundException("Пользователь " + userId + " не ставил лайк фильму " + filmId);
+        }
+        log.info("Пользователь с id {} удалил лайк у фильма с id {}", userId, filmId);
+    }
+
+    public Collection<Film> topFilms(int count) {
+        String sql = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_likes l ON f.film_id = l.film_id " +
+                "GROUP BY f.film_id, m.name " +
+                "ORDER BY COUNT(l.user_id) DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Film film = new Film();
+            film.setId(rs.getLong("film_id"));
+            film.setName(rs.getString("name"));
+            film.setDescription(rs.getString("description"));
+            film.setReleaseDate(rs.getDate("release_date").toLocalDate());
+            film.setDuration((long) rs.getInt("duration"));
+
+            if (rs.getObject("mpa_id") != null) {
+                Mpa mpa = new Mpa();
+                mpa.setId(rs.getInt("mpa_id"));
+                mpa.setName(rs.getString("mpa_name"));
+                film.setMpa(mpa);
+            }
+            return film;
+        }, count);
+
+        loadGenresForFilms(films);
+
+        return films;
+    }
+
+    // Вспомогательные оптимизированные методы для работы с БД
+
     private void checkMpaExists(int mpaId) {
         String sql = "SELECT COUNT(*) FROM mpa_ratings WHERE mpa_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, mpaId);
         if (count == null || count == 0) {
             throw new NotFoundException("MPA рейтинг с id " + mpaId + " не найден");
+        }
+    }
+
+    private void checkUserExists(Long userId) {
+        String sql = "SELECT COUNT(*) FROM users WHERE user_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
     }
 
