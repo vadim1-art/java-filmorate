@@ -74,7 +74,7 @@ public class FilmService {
         getFilmById(filmId);
         checkUserExists(userId);
 
-        String sql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        String sql = "INSERT INTO likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, filmId, userId);
         log.info("Пользователь с id {} поставил лайк фильму с id {}", userId, filmId);
     }
@@ -83,7 +83,7 @@ public class FilmService {
         getFilmById(filmId);
         checkUserExists(userId);
 
-        String sql = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
+        String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
         int rowsAffected = jdbcTemplate.update(sql, filmId, userId);
 
         if (rowsAffected == 0) {
@@ -96,7 +96,7 @@ public class FilmService {
         String sql = "SELECT f.*, m.name AS mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings m ON f.mpa_id = m.mpa_id " +
-                "LEFT JOIN film_likes l ON f.film_id = l.film_id " +
+                "LEFT JOIN likes l ON f.film_id = l.film_id " +
                 "GROUP BY f.film_id, m.name " +
                 "ORDER BY COUNT(l.user_id) DESC " +
                 "LIMIT ?";
